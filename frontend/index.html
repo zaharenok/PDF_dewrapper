@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Dewarp - Fix Curved Documents</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 Page Dewarp</h1>
+            <p class="subtitle">Straighten curved and distorted document pages</p>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <h3>Drag & Drop Image Here</h3>
+                    <p>or click to browse</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        Select Image
+                    </button>
+                </div>
+
+                <!-- Processing Mode -->
+                <div class="options">
+                    <h4>Processing Mode</h4>
+                    <div class="option-group">
+                        <label for="processingMode">Mode:</label>
+                        <select id="processingMode">
+                            <option value="dewarp">Dewarp Only (curve correction)</option>
+                            <option value="deskew">Deskew Only (tilt correction)</option>
+                            <option value="full" selected>Full Processing (recommended)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Advanced Options -->
+                <div class="options">
+                    <h4>Advanced Options</h4>
+                    <div class="option-group">
+                        <label for="dpiInput">Output DPI:</label>
+                        <input type="number" id="dpiInput" value="300" min="72" max="600" step="1">
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="applyPerspective">
+                            Apply Perspective Correction
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="applyEnhancement">
+                            Apply Image Enhancement
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label for="debugLevel">Debug Level:</label>
+                        <select id="debugLevel">
+                            <option value="0">0 - No debug</option>
+                            <option value="1">1 - Basic</option>
+                            <option value="2">2 - Detailed</option>
+                            <option value="3">3 - Full</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Processing Status -->
+            <section class="status-section" id="statusSection" style="display: none;">
+                <div class="status-card">
+                    <div class="spinner"></div>
+                    <p id="statusMessage">Processing your image...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h2>Results</h2>
+
+                <div class="comparison">
+                    <div class="image-container">
+                        <h3>Original</h3>
+                        <div class="image-wrapper">
+                            <img id="originalImage" alt="Original Image">
+                        </div>
+                    </div>
+
+                    <div class="arrow">→</div>
+
+                    <div class="image-container">
+                        <h3>Dewarped</h3>
+                        <div class="image-wrapper">
+                            <img id="dewarpedImage" alt="Dewarped Image">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-info">
+                    <p><strong>Processing Time:</strong> <span id="processingTime">-</span></p>
+                    <p><strong>Task ID:</strong> <span id="taskId">-</span></p>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-success" id="downloadBtn">Download Result</button>
+                    <button class="btn btn-secondary" id="newImageBtn">Process Another Image</button>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section class="error-section" id="errorSection" style="display: none;">
+                <div class="error-card">
+                    <h3>⚠️ Error</h3>
+                    <p id="errorMessage"></p>
+                    <button class="btn btn-secondary" onclick="resetApp()">Try Again</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by <a href="https://github.com/mzucker/page_dewarp" target="_blank">page-dewarp</a> algorithm</p>
+            <p>Algorithm by Matt Zucker | <a href="https://mzucker.github.io/2016/08/15/page-dewarping.html" target="_blank">Read the technical article</a></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
