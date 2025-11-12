@@ -171,7 +171,7 @@ async def dewarp_image(
         )
     
     # Validate file size (10MB max)
-    MAX_FILE_SIZE = 10 * 1024 * 1024
+    MAX_FILE_SIZE = 20 * 1024 * 1024
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
@@ -179,7 +179,7 @@ async def dewarp_image(
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"File too large. Maximum size: 10MB, got: {file_size / (1024*1024):.2f}MB"
+            detail=f"File too large. Maximum size: 20MB, got: {file_size / (1024*1024):.2f}MB"
         )
 
     # Generate unique task ID
@@ -321,7 +321,7 @@ async def deskew_image(
         )
     
     # Validate file size (10MB max)
-    MAX_FILE_SIZE = 10 * 1024 * 1024
+    MAX_FILE_SIZE = 20 * 1024 * 1024
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
@@ -329,7 +329,7 @@ async def deskew_image(
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"File too large. Maximum size: 10MB, got: {file_size / (1024*1024):.2f}MB"
+            detail=f"File too large. Maximum size: 20MB, got: {file_size / (1024*1024):.2f}MB"
         )
 
     # Generate unique task ID
@@ -430,7 +430,7 @@ async def process_full(
         )
     
     # Validate file size (10MB max)
-    MAX_FILE_SIZE = 10 * 1024 * 1024
+    MAX_FILE_SIZE = 20 * 1024 * 1024
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
@@ -438,7 +438,7 @@ async def process_full(
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"File too large. Maximum size: 10MB, got: {file_size / (1024*1024):.2f}MB"
+            detail=f"File too large. Maximum size: 20MB, got: {file_size / (1024*1024):.2f}MB"
         )
 
     # Generate unique task ID
