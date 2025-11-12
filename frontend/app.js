@@ -77,13 +77,24 @@ function handleFileSelect(e) {
 
 // File handling
 function handleFile(file) {
+    console.log('📄 File selected:', file.name);
+    console.log('📋 File type:', file.type);
+    console.log('📏 File size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/bmp', 'image/tiff', 'application/pdf'];
     const validExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.pdf'];
     
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    console.log('🔍 File extension:', fileExtension);
     
-    if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+    const typeValid = validTypes.includes(file.type);
+    const extensionValid = validExtensions.includes(fileExtension);
+    console.log('✅ Type valid:', typeValid);
+    console.log('✅ Extension valid:', extensionValid);
+    
+    if (!typeValid && !extensionValid) {
+        console.error('❌ File validation failed');
         showError('Invalid file type. Please upload a JPG, PNG, BMP, TIFF, or PDF file.');
         return;
     }
@@ -91,17 +102,19 @@ function handleFile(file) {
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
+        console.error('❌ File too large:', file.size);
         showError('File size too large. Maximum size is 10MB.');
         return;
     }
 
+    console.log('✅ File validation passed, uploading...');
     // Process the file
     uploadAndProcess(file);
 }
 
 // Upload and process image
 async function uploadAndProcess(file) {
-    showStatus('Uploading image...');
+    showStatus('Uploading file...');
 
     const formData = new FormData();
     formData.append('file', file);
@@ -109,6 +122,8 @@ async function uploadAndProcess(file) {
     const mode = processingMode.value;
     let endpoint = '/api/dewarp';
 
+    console.log('📤 Upload mode:', mode);
+    
     // Determine endpoint based on mode
     if (mode === 'deskew') {
         endpoint = '/api/deskew';
@@ -126,18 +141,33 @@ async function uploadAndProcess(file) {
         formData.append('debug_level', debugLevel.value);
     }
 
+    console.log('🌐 Endpoint:', endpoint);
+    console.log('📦 FormData entries:');
+    for (let pair of formData.entries()) {
+        if (pair[0] === 'file') {
+            console.log('  file:', pair[1].name, pair[1].type, pair[1].size);
+        } else {
+            console.log(' ', pair[0] + ':', pair[1]);
+        }
+    }
+
     try {
+        console.log('🚀 Sending request to:', `${API_BASE}${endpoint}`);
         const response = await fetch(`${API_BASE}${endpoint}`, {
             method: 'POST',
             body: formData
         });
 
+        console.log('📨 Response status:', response.status);
+        
         if (!response.ok) {
             const error = await response.json();
+            console.error('❌ Server error:', error);
             throw new Error(error.detail || 'Upload failed');
         }
 
         const result = await response.json();
+        console.log('✅ Server response:', result);
 
         if (result.status === 'success') {
             displayResults(result, file);
@@ -146,8 +176,8 @@ async function uploadAndProcess(file) {
         }
 
     } catch (error) {
-        console.error('Error:', error);
-        showError(error.message || 'An error occurred while processing the image');
+        console.error('❌ Error:', error);
+        showError(error.message || 'An error occurred while processing the file');
     }
 }
 
