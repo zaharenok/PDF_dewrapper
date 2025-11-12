@@ -18,8 +18,6 @@ from pydantic import BaseModel
 
 from dewarp_service import DewarpService
 from preprocessing import ImagePreprocessor
-import cv2
-import numpy as np
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -170,6 +168,18 @@ async def dewarp_image(
             status_code=400,
             detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
         )
+    
+    # Validate file size (10MB max)
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size: 10MB, got: {file_size / (1024*1024):.2f}MB"
+        )
 
     # Generate unique task ID
     task_id = str(uuid.uuid4())
@@ -276,6 +286,7 @@ async def deskew_image(
     - task_id: Unique task identifier
     - dewarped_image: URL to the deskewed image
     """
+    import cv2
 
     # Validate file type
     allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
@@ -285,6 +296,18 @@ async def deskew_image(
         raise HTTPException(
             status_code=400,
             detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+        )
+    
+    # Validate file size (10MB max)
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size: 10MB, got: {file_size / (1024*1024):.2f}MB"
         )
 
     # Generate unique task ID
@@ -360,6 +383,7 @@ async def process_full(
     - task_id: Unique task identifier
     - dewarped_image: URL to the processed image
     """
+    import cv2
 
     # Validate file type
     allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
@@ -369,6 +393,18 @@ async def process_full(
         raise HTTPException(
             status_code=400,
             detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+        )
+    
+    # Validate file size (10MB max)
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size: 10MB, got: {file_size / (1024*1024):.2f}MB"
         )
 
     # Generate unique task ID
