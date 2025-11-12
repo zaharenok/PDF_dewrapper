@@ -78,9 +78,13 @@ function handleFileSelect(e) {
 // File handling
 function handleFile(file) {
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/bmp', 'image/tiff'];
-    if (!validTypes.includes(file.type)) {
-        showError('Invalid file type. Please upload a JPG, PNG, BMP, or TIFF image.');
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/bmp', 'image/tiff', 'application/pdf'];
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.pdf'];
+    
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+        showError('Invalid file type. Please upload a JPG, PNG, BMP, TIFF, or PDF file.');
         return;
     }
 
