@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from dewarp_service import DewarpService
 from preprocessing import ImagePreprocessor
+from pdf_converter import PDFConverter
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -147,10 +148,10 @@ async def dewarp_image(
     debug_level: int = 0
 ):
     """
-    Upload and dewarp a document image
+    Upload and dewarp a document image or PDF
 
     Parameters:
-    - file: Image file (JPG, PNG)
+    - file: Image file (JPG, PNG, PDF)
     - output_dpi: Output DPI for the dewarped image (default: 300)
     - debug_level: Debug level (0-3, default: 0)
 
@@ -160,7 +161,7 @@ async def dewarp_image(
     """
 
     # Validate file type
-    allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".pdf"}
     file_ext = Path(file.filename).suffix.lower()
 
     if file_ext not in allowed_extensions:
@@ -196,10 +197,31 @@ async def dewarp_image(
             detail=f"Failed to save uploaded file: {str(e)}"
         )
 
+    # Convert PDF to image if needed
+    processing_path = upload_path
+    if file_ext == ".pdf":
+        try:
+            # Convert first page of PDF to image
+            image_path = UPLOAD_DIR / f"{task_id}_converted.png"
+            PDFConverter.convert_pdf_to_image(
+                pdf_path=str(upload_path),
+                output_path=str(image_path),
+                dpi=output_dpi,
+                page_number=1
+            )
+            processing_path = image_path
+        except Exception as e:
+            if upload_path.exists():
+                upload_path.unlink()
+            raise HTTPException(
+                status_code=500,
+                detail=f"PDF conversion failed: {str(e)}"
+            )
+
     # Process the image
     try:
         result = dewarp_service.process_image(
-            input_path=str(upload_path),
+            input_path=str(processing_path),
             task_id=task_id,
             output_dpi=output_dpi,
             debug_level=debug_level
@@ -276,10 +298,10 @@ async def deskew_image(
     method: str = "hough"
 ):
     """
-    Upload and deskew (straighten tilted) a document image
+    Upload and deskew (straighten tilted) a document image or PDF
 
     Parameters:
-    - file: Image file (JPG, PNG)
+    - file: Image file (JPG, PNG, PDF)
     - method: Deskew method ('hough' or 'projection', default: 'hough')
 
     Returns:
@@ -289,7 +311,7 @@ async def deskew_image(
     import cv2
 
     # Validate file type
-    allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".pdf"}
     file_ext = Path(file.filename).suffix.lower()
 
     if file_ext not in allowed_extensions:
@@ -320,12 +342,24 @@ async def deskew_image(
         with upload_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        # Convert PDF to image if needed
+        processing_path = upload_path
+        if file_ext == ".pdf":
+            image_path = UPLOAD_DIR / f"{task_id}_converted.png"
+            PDFConverter.convert_pdf_to_image(
+                pdf_path=str(upload_path),
+                output_path=str(image_path),
+                dpi=300,
+                page_number=1
+            )
+            processing_path = image_path
+
         # Process the image
         import time
         start_time = time.time()
 
         # Read image
-        image = cv2.imread(str(upload_path))
+        image = cv2.imread(str(processing_path))
 
         # Deskew
         deskewed, angle = ImagePreprocessor.deskew(image, method=method)
@@ -372,7 +406,7 @@ async def process_full(
     Full document processing pipeline
 
     Parameters:
-    - file: Image file (JPG, PNG)
+    - file: Image file (JPG, PNG, PDF)
     - apply_deskew: Apply deskewing (default: True)
     - apply_dewarp: Apply dewarping (default: True)
     - apply_perspective: Apply perspective correction (default: False)
@@ -386,7 +420,7 @@ async def process_full(
     import cv2
 
     # Validate file type
-    allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".pdf"}
     file_ext = Path(file.filename).suffix.lower()
 
     if file_ext not in allowed_extensions:
@@ -417,12 +451,24 @@ async def process_full(
         with upload_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        # Convert PDF to image if needed
+        processing_path = upload_path
+        if file_ext == ".pdf":
+            image_path = UPLOAD_DIR / f"{task_id}_converted.png"
+            PDFConverter.convert_pdf_to_image(
+                pdf_path=str(upload_path),
+                output_path=str(image_path),
+                dpi=output_dpi,
+                page_number=1
+            )
+            processing_path = image_path
+
         # Process the image
         import time
         start_time = time.time()
 
         # Read image
-        image = cv2.imread(str(upload_path))
+        image = cv2.imread(str(processing_path))
         steps = []
 
         # Step 1: Deskew
