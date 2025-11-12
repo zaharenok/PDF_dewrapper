@@ -21,6 +21,7 @@ const debugLevel = document.getElementById('debugLevel');
 const processingMode = document.getElementById('processingMode');
 const applyPerspective = document.getElementById('applyPerspective');
 const applyEnhancement = document.getElementById('applyEnhancement');
+const preserveColor = document.getElementById('preserveColor');
 
 // State
 let currentTaskId = null;
@@ -120,12 +121,21 @@ async function uploadAndProcess(file) {
     formData.append('file', file);
 
     const mode = processingMode.value;
+    const isPDF = file.name.toLowerCase().endsWith('.pdf');
     let endpoint = '/api/dewarp';
 
     console.log('📤 Upload mode:', mode);
+    console.log('📄 Is PDF:', isPDF);
     
-    // Determine endpoint based on mode
-    if (mode === 'deskew') {
+    // For PDF files, use dedicated PDF endpoint
+    if (isPDF) {
+        endpoint = '/api/process-pdf';
+        formData.append('output_dpi', dpiInput.value);
+        formData.append('preserve_color', preserveColor.checked ? 'true' : 'false');
+        formData.append('apply_deskew', 'true');
+    }
+    // For images, use existing endpoints
+    else if (mode === 'deskew') {
         endpoint = '/api/deskew';
         formData.append('method', 'hough');
     } else if (mode === 'full') {
@@ -170,7 +180,12 @@ async function uploadAndProcess(file) {
         console.log('✅ Server response:', result);
 
         if (result.status === 'success') {
-            displayResults(result, file);
+            // Check if it's a PDF result (has zip_download)
+            if (result.zip_download) {
+                displayPDFResults(result, file);
+            } else {
+                displayResults(result, file);
+            }
         } else {
             throw new Error(result.message || 'Processing failed');
         }
@@ -261,4 +276,47 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Display PDF results
+function displayPDFResults(result, originalFile) {
+    console.log('📄 Displaying PDF results:', result);
+    
+    currentTaskId = result.task_id;
+    
+    // Hide status, show results
+    hideAllSections();
+    resultsSection.style.display = 'block';
+    
+    // Update result info
+    processingTime.textContent = `${result.processing_time}s`;
+    taskId.textContent = result.task_id;
+    
+    // Create download button for ZIP
+    const downloadZipBtn = document.createElement('button');
+    downloadZipBtn.className = 'btn btn-success';
+    downloadZipBtn.textContent = `📦 Download All Pages (${result.page_count} pages)`;
+    downloadZipBtn.onclick = () => {
+        window.location.href = `${API_BASE}${result.zip_download}`;
+    };
+    
+    // Replace comparison section with PDF info
+    const comparison = resultsSection.querySelector('.comparison');
+    comparison.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <h2>✅ PDF Processed Successfully!</h2>
+            <p style="font-size: 18px; margin: 20px 0;">
+                <strong>${result.page_count}</strong> pages processed
+            </p>
+            <p style="color: ${result.preserve_color ? 'green' : 'gray'};">
+                ${result.preserve_color ? '🎨 Colors preserved' : '⚫ Black & white'}
+            </p>
+            <div style="margin: 30px 0;">
+                ${downloadZipBtn.outerHTML}
+            </div>
+            <p style="margin-top: 20px; color: #666;">
+                All processed pages are included in the ZIP archive
+            </p>
+        </div>
+    `;
 }

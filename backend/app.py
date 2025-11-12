@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from dewarp_service import DewarpService
 from preprocessing import ImagePreprocessor
 from pdf_converter import PDFConverter
+from pdf_processor import PDFProcessor
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -145,7 +146,9 @@ async def dewarp_image(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     output_dpi: int = 300,
-    debug_level: int = 0
+    debug_level: int = 0,
+    preserve_color: bool = True,
+    process_all_pages: bool = True
 ):
     """
     Upload and dewarp a document image or PDF
@@ -535,3 +538,90 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
+
+@app.post("/api/process-pdf")
+async def process_pdf(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    output_dpi: int = 300,
+    preserve_color: bool = True,
+    apply_deskew: bool = True
+):
+    """
+    Process multi-page PDF with color preservation
+    
+    Parameters:
+    - file: PDF file
+    - output_dpi: Output DPI (default: 300)
+    - preserve_color: Keep colors (default: True)  
+    - apply_deskew: Apply deskewing (default: True)
+    
+    Returns:
+    - ZIP archive with all processed pages
+    """
+    import cv2
+    
+    # Validate file type
+    file_ext = Path(file.filename).suffix.lower()
+    
+    if file_ext != ".pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="This endpoint only accepts PDF files"
+        )
+    
+    # Validate file size (20MB max)
+    MAX_FILE_SIZE = 20 * 1024 * 1024
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size: 20MB, got: {file_size / (1024*1024):.2f}MB"
+        )
+    
+    # Generate unique task ID
+    task_id = str(uuid.uuid4())
+    
+    # Save uploaded file
+    upload_path = UPLOAD_DIR / f"{task_id}.pdf"
+    
+    try:
+        with upload_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Process all pages
+        result = PDFProcessor.process_pdf_multipage(
+            pdf_path=str(upload_path),
+            task_id=task_id,
+            output_dir=RESULTS_DIR,
+            dpi=output_dpi,
+            preserve_color=preserve_color,
+            apply_deskew=apply_deskew,
+            apply_dewarp=False  # Dewarp makes B&W
+        )
+        
+        # Schedule cleanup
+        background_tasks.add_task(cleanup_old_files)
+        
+        return {
+            "task_id": task_id,
+            "status": "success",
+            "message": f"Processed {result['page_count']} pages successfully",
+            "page_count": result['page_count'],
+            "zip_download": result['zip_path'],
+            "processing_time": result['processing_time'],
+            "preserve_color": preserve_color
+        }
+        
+    except Exception as e:
+        # Clean up on failure
+        if upload_path.exists():
+            upload_path.unlink()
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"PDF processing failed: {str(e)}"
+        )

@@ -32,7 +32,8 @@ class DewarpService:
         output_dpi: int = 300,
         debug_level: int = 0,
         focal_length: Optional[float] = None,
-        output_zoom: Optional[float] = None
+        output_zoom: Optional[float] = None,
+        preserve_color: bool = False
     ) -> Dict:
         """
         Process an image using page-dewarp library
