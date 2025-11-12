@@ -625,3 +625,27 @@ async def process_pdf(
             status_code=500,
             detail=f"PDF processing failed: {str(e)}"
         )
+
+@app.get("/api/download-zip/{task_id}")
+async def download_zip(task_id: str):
+    """Download ZIP archive with all processed pages"""
+    
+    # Find ZIP file
+    zip_files = list(RESULTS_DIR.glob(f"{task_id}_all_pages.zip"))
+    
+    if not zip_files:
+        raise HTTPException(
+            status_code=404,
+            detail="ZIP file not found. Make sure the PDF was processed successfully."
+        )
+    
+    zip_file = zip_files[0]
+    
+    return FileResponse(
+        path=zip_file,
+        media_type="application/zip",
+        filename=f"processed_pages_{task_id}.zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="processed_pages_{task_id}.zip"'
+        }
+    )

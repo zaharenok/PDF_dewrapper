@@ -297,7 +297,8 @@ function displayPDFResults(result, originalFile) {
     downloadZipBtn.className = 'btn btn-success';
     downloadZipBtn.textContent = `📦 Download All Pages (${result.page_count} pages)`;
     downloadZipBtn.onclick = () => {
-        window.location.href = `${API_BASE}${result.zip_download}`;
+        // Use dedicated download endpoint
+        window.location.href = `${API_BASE}/api/download-zip/${result.task_id}`;
     };
     
     // Replace comparison section with PDF info
