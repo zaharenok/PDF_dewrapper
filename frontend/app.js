@@ -298,7 +298,32 @@ function displayPDFResults(result, originalFile) {
     downloadZipBtn.textContent = `📦 Download All Pages (${result.page_count} pages)`;
     downloadZipBtn.onclick = () => {
         // Use dedicated download endpoint
-        window.location.href = `${API_BASE}/api/download-zip/${result.task_id}`;
+        const downloadUrl = `${API_BASE}/api/download-zip/${result.task_id}`;
+        console.log('📥 Downloading ZIP from:', downloadUrl);
+        
+        // Try using fetch with blob for better compatibility
+        fetch(downloadUrl)
+            .then(response => {
+                if (!response.ok) throw new Error('Download failed');
+                console.log('✅ Response OK, getting blob...');
+                return response.blob();
+            })
+            .then(blob => {
+                console.log('✅ Blob received, size:', blob.size);
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `processed_pages_${result.task_id}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                console.log('✅ Download initiated!');
+            })
+            .catch(err => {
+                console.error('❌ Download error:', err);
+                alert('Failed to download ZIP file: ' + err.message);
+            });
     };
     
     // Replace comparison section with PDF info
