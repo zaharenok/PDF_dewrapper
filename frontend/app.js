@@ -292,10 +292,30 @@ function displayPDFResults(result, originalFile) {
     processingTime.textContent = `${result.processing_time}s`;
     taskId.textContent = result.task_id;
     
-    // Create download button for ZIP
-    const downloadZipBtn = document.createElement('button');
-    downloadZipBtn.className = 'btn btn-success';
-    downloadZipBtn.textContent = `📦 Download All Pages (${result.page_count} pages)`;
+    // Replace comparison section with PDF info
+    const comparison = resultsSection.querySelector('.comparison');
+    comparison.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <h2>✅ PDF Processed Successfully!</h2>
+            <p style="font-size: 18px; margin: 20px 0;">
+                <strong>${result.page_count}</strong> pages processed
+            </p>
+            <p style="color: ${result.preserve_color ? 'green' : 'gray'};">
+                ${result.preserve_color ? '🎨 Colors preserved' : '⚫ Black & white'}
+            </p>
+            <div style="margin: 30px 0;">
+                <button id="downloadZipBtn" class="btn btn-success">
+                    📦 Download All Pages (${result.page_count} pages)
+                </button>
+            </div>
+            <p style="margin-top: 20px; color: #666;">
+                All processed pages are included in the ZIP archive
+            </p>
+        </div>
+    `;
+    
+    // Attach event listener to download button AFTER it's in the DOM
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
     downloadZipBtn.onclick = () => {
         // Use dedicated download endpoint
         const downloadUrl = `${API_BASE}/api/download-zip/${result.task_id}`;
@@ -325,24 +345,4 @@ function displayPDFResults(result, originalFile) {
                 alert('Failed to download ZIP file: ' + err.message);
             });
     };
-    
-    // Replace comparison section with PDF info
-    const comparison = resultsSection.querySelector('.comparison');
-    comparison.innerHTML = `
-        <div style="text-align: center; padding: 40px;">
-            <h2>✅ PDF Processed Successfully!</h2>
-            <p style="font-size: 18px; margin: 20px 0;">
-                <strong>${result.page_count}</strong> pages processed
-            </p>
-            <p style="color: ${result.preserve_color ? 'green' : 'gray'};">
-                ${result.preserve_color ? '🎨 Colors preserved' : '⚫ Black & white'}
-            </p>
-            <div style="margin: 30px 0;">
-                ${downloadZipBtn.outerHTML}
-            </div>
-            <p style="margin-top: 20px; color: #666;">
-                All processed pages are included in the ZIP archive
-            </p>
-        </div>
-    `;
 }
